@@ -1,0 +1,6 @@
+nibe>=0.0.1
+
+paho_mqtt>=1.5.0
+voluptuous>=0.13.0
+pyyaml>=6.0
+python-slugify>=6.0.0
