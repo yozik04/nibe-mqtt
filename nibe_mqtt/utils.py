@@ -20,7 +20,7 @@ def retry(retry_delays: List[float], exeptions: Tuple[Type[Exception]]):
                     if not isinstance(e, exeptions):
                         raise
 
-                    logger.error(f'Attempt failed ({len(delays)} left). Exception: {e}')
+                    logger.warning(f'Attempt failed ({len(delays)} left). Exception: {e}')
 
                     if delays:
                         delay = delays.pop(0)
