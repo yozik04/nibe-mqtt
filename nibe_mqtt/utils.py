@@ -20,15 +20,18 @@ def retry(retry_delays: List[float], exeptions: Tuple[Type[Exception]]):
                     if not isinstance(e, exeptions):
                         raise
 
-                    logger.warning(f'Attempt failed ({len(delays)} left). Exception: {e}')
+                    logger.warning(
+                        f"Attempt failed ({len(delays)} left). Exception: {e}"
+                    )
 
                     if delays:
                         delay = delays.pop(0)
                         if delay > 0:
-                            logger.debug(f'Sleeping {delay} before retry')
+                            logger.debug(f"Sleeping {delay} before retry")
                             await asyncio.sleep(delay)
                     else:
                         raise TooManyTriesException() from e
 
         return wrapper
+
     return func_wrapper

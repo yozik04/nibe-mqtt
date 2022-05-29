@@ -16,17 +16,17 @@ class RetryTestCase(unittest.TestCase):
         fn = retry(retry_delays=[0], exeptions=(CoilReadTimeoutException,))(coro)
 
         with self.assertRaises(TooManyTriesException):
-            self.loop.run_until_complete(fn('a'))
+            self.loop.run_until_complete(fn("a"))
 
         self.assertEqual(2, coro.call_count)
-        coro.assert_called_with('a')
+        coro.assert_called_with("a")
 
         with self.assertRaises(TooManyTriesException):
-            self.loop.run_until_complete(fn('b'))
+            self.loop.run_until_complete(fn("b"))
 
         self.assertEqual(4, coro.call_count)
-        coro.assert_called_with('b')
+        coro.assert_called_with("b")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
