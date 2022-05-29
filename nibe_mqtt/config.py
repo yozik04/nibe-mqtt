@@ -4,17 +4,8 @@ from pathlib import Path
 import yaml
 from nibe.heatpump import Model
 from paho.mqtt.client import MQTTv5, MQTTv31, MQTTv311
-from voluptuous import (
-    All,
-    Exclusive,
-    Inclusive,
-    InInvalid,
-    Optional,
-    Range,
-    Required,
-    Schema,
-    ValueInvalid,
-)
+from voluptuous import (All, Any, Exclusive, Inclusive, InInvalid, Optional, Range,
+                        Required, Schema, ValueInvalid,)
 
 mqtt_protocol_map = {"3.1": MQTTv31, "3.1.1": MQTTv311, "5": MQTTv5}
 
@@ -53,12 +44,17 @@ nibe_schema = Schema(
             Optional("read_port", default=9999): port,
             Optional("write_port", default=10000): port,
         },
+        Exclusive("modbus", "connection"): {
+            Required("url"): str,
+            Required("slave_id"): int,
+            Optional("options", default=None): Any(None, dict),
+        },
         Required("model"): heatpump_model,
         Optional("poll"): {
             Optional("interval", default=60): All(int, Range(min=5, max=60 * 60 * 24)),
             Optional("coils"): [str, int],
         },
-        Optional("retry_delays", default=[0.0, 0.5]): [float]
+        Optional("retry_delays", default=[0.0, 0.5]): [float],
     }
 )
 

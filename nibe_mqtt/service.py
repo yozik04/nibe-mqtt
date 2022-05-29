@@ -5,13 +5,14 @@ from pathlib import Path
 from typing import Union
 
 from nibe.coil import Coil
-from nibe.connection.nibegw import NibeGW
-from nibe.exceptions import CoilWriteException, CoilReadTimeoutException, CoilWriteTimeoutException
+from nibe.connection import Connection
+from nibe.exceptions import (CoilReadTimeoutException, CoilWriteException,
+                             CoilWriteTimeoutException,)
 from nibe.heatpump import HeatPump
-from nibe_mqtt import cfg
-from nibe_mqtt.mqtt import MqttConnection, MqttHandler
 from slugify import slugify
 
+from nibe_mqtt import cfg
+from nibe_mqtt.mqtt import MqttConnection, MqttHandler
 from nibe_mqtt.utils import retry
 
 logger = logging.getLogger("nibe").getChild(__name__)
@@ -26,14 +27,12 @@ class Service(MqttHandler):
 
         self.heatpump.subscribe(HeatPump.COIL_UPDATE_EVENT, self.on_coil_update)
 
-        self.connection = NibeGW(
-            heatpump=self.heatpump,
-            listening_ip=conf["nibe"]["nibegw"]["listening_ip"],
-            listening_port=conf["nibe"]["nibegw"]["listening_port"],
-            remote_ip=conf["nibe"]["nibegw"]["ip"],
-            remote_read_port=conf["nibe"]["nibegw"]["read_port"],
-            remote_write_port=conf["nibe"]["nibegw"]["write_port"],
-        )
+        if "nibegw" in conf["nibe"]:
+            self.connection = self._get_nibegw_connection(conf["nibe"]["nibegw"])
+        elif "modbus" in conf["nibe"]:
+            self.connection = self._get_modbus_connection(conf["nibe"]["modbus"])
+        else:
+            raise AssertionError("Invalid or no connection type specified")
 
         self.poller = None
         poll_config = conf["nibe"].get("poll")
@@ -43,6 +42,28 @@ class Service(MqttHandler):
         self.retry_delays = conf["nibe"]["retry_delays"]
 
         self.mqtt_client = MqttConnection(self, conf["mqtt"])
+
+    def _get_nibegw_connection(self, conn_conf) -> Connection:
+        from nibe.connection.nibegw import NibeGW
+
+        return NibeGW(
+            heatpump=self.heatpump,
+            listening_ip=conn_conf["listening_ip"],
+            listening_port=conn_conf["listening_port"],
+            remote_ip=conn_conf["ip"],
+            remote_read_port=conn_conf["read_port"],
+            remote_write_port=conn_conf["write_port"],
+        )
+
+    def _get_modbus_connection(self, conn_conf) -> Connection:
+        from nibe.connection.modbus import Modbus
+
+        return Modbus(
+            heatpump=self.heatpump,
+            url=conn_conf["url"],
+            slave_id=conn_conf["slave_id"],
+            conn_options=conn_conf["options"],
+        )
 
     def _get_device_info(self) -> dict:
         return {
@@ -63,14 +84,18 @@ class Service(MqttHandler):
             logger.exception("Unhandled exception", e)
 
     async def read_coil(self, coil: Coil):
-        decorator = retry(retry_delays=self.retry_delays, exeptions=(CoilReadTimeoutException,))
+        decorator = retry(
+            retry_delays=self.retry_delays, exeptions=(CoilReadTimeoutException,)
+        )
         return await decorator(self.connection.read_coil)(coil)
 
     async def write_coil(self, coil: Coil) -> None:
         refresh_required = True
         try:
             coil_value = coil.value
-            decorator = retry(retry_delays=self.retry_delays, exeptions=(CoilWriteTimeoutException,))
+            decorator = retry(
+                retry_delays=self.retry_delays, exeptions=(CoilWriteTimeoutException,)
+            )
             await decorator(self.connection.write_coil)(coil)
             if (
                 coil_value == coil.value
@@ -93,7 +118,8 @@ class Service(MqttHandler):
                 logger.exception("Unhandled exception during read", e)
 
     async def start(self):
-        await self.connection.start()
+        if callable(getattr(self.connection, "start")):
+            await self.connection.start()
 
         self.mqtt_client.start()
 
