@@ -123,9 +123,11 @@ class PollService:
 
     def _get_coil(self, name_or_address: Union[str, int]):
         if isinstance(name_or_address, str):
-            return self._heatpump.get_coil_by_name(name_or_address)
+            coil = self._heatpump.get_coil_by_name(name_or_address)
         if isinstance(name_or_address, int):
-            return self._heatpump.get_coil_by_address(name_or_address)
+            coil = self._heatpump.get_coil_by_address(name_or_address)
+        assert coil, f"Unknown coil {name_or_address}"
+        return coil
 
     def start(self):
         asyncio.create_task(self._loop())
