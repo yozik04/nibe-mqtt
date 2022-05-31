@@ -7,7 +7,7 @@ from typing import Union
 from nibe.coil import Coil
 from nibe.connection import Connection
 from nibe.exceptions import (CoilReadTimeoutException, CoilWriteException,
-                             CoilWriteTimeoutException,)
+                             CoilWriteTimeoutException, CoilNotFoundException, )
 from nibe.heatpump import HeatPump
 from slugify import slugify
 
@@ -73,12 +73,12 @@ class Service(MqttHandler):
         }
 
     def handle_coil_set(self, name, value: str):
-        coil = self.heatpump.get_coil_by_name(name)
         try:
+            coil = self.heatpump.get_coil_by_name(name)
             coil.value = value
 
             asyncio.create_task(self.write_coil(coil))
-        except AssertionError as e:
+        except (AssertionError, CoilNotFoundException) as e:
             logger.error(e)
         except Exception as e:
             logger.exception("Unhandled exception", e)
@@ -118,8 +118,7 @@ class Service(MqttHandler):
                 logger.exception("Unhandled exception during read", e)
 
     async def start(self):
-        if callable(getattr(self.connection, "start")):
-            await self.connection.start()
+        await self.connection.start()
 
         self.mqtt_client.start()
 
