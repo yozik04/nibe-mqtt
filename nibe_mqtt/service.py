@@ -157,7 +157,6 @@ class PollService:
         asyncio.create_task(self._loop())
 
     async def _loop(self):
-        await asyncio.sleep(self._interval)
         while True:
             await asyncio.sleep(5.0)
             for coil in self._coils:
