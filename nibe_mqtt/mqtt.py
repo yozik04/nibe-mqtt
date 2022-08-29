@@ -52,7 +52,7 @@ class MqttConnection:
         )
         self._client.subscribe(f"{self._conf['prefix']}/coils/+/set")
 
-    def _on_disconnect_cb(self, userdata, rc, properties=None):
+    def _on_disconnect_cb(self, client, userdata, rc, properties=None):
         logger.info("MQTT disconnected")
 
     def _on_message_cb(self, client, userdata, msg: MQTTMessage):
