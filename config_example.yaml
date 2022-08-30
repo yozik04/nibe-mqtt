@@ -8,6 +8,7 @@ mqtt:
   password: mqtt_pass
 nibe:
   model: F1255
+  word_swap: true
   nibegw:
     ip: 192.168.1.3
     listening_port: 9999

@@ -37,6 +37,7 @@ mqtt:
   password: pass
 nibe:
   model: F1255
+  word_swap: true
   nibegw:
     ip: 192.168.1.3
   poll:
@@ -55,6 +56,7 @@ mqtt:
   password: pass
 nibe:
   model: F1255
+  word_swap: true
   modbus:
     url: tcp://192.168.1.3:502
     slave_id: 1
@@ -64,6 +66,15 @@ nibe:
 ```
 
 For all configuration options lookup in config.py
+
+## Word swap
+You need to specify `word_swap` setting to let this library understand how to decode 32-bit integers (mostly counters)
+
+There is a setting called `word swap` in Nibe service menu 5.3.11 (`modbus settings`).
+
+You need to set `word_swap` setting in yaml to match the setting in the service menu.
+
+Failing to do so will start throwing errors about values out of bounds.
 
 ## Disclaimer
 Nibe is registered mark of NIBE Energy Systems.

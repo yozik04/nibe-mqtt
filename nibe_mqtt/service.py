@@ -22,6 +22,7 @@ class Service(MqttHandler):
     def __init__(self, conf: dict):
         self.conf = conf
         self.heatpump = HeatPump(conf["nibe"]["model"])
+        self.heatpump.word_swap = conf["nibe"]["word_swap"]
         self.heatpump.initialize()
         self.announced_coils = set()
 
