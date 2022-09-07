@@ -1,0 +1,12 @@
+ARG BUILD_FROM=python:3-alpine
+FROM $BUILD_FROM
+
+RUN which pip3 2>/dev/null || apk add --no-cache python3 py3-pip
+
+COPY . /src
+COPY config_example.yaml /default/config_example.yaml
+COPY docker/run.sh /run.sh
+
+RUN pip3 install /src && rm -fr /src
+
+CMD [ "/run.sh" ]
