@@ -1,4 +1,4 @@
-ARG BUILD_FROM=python:3-slim-buster
+ARG BUILD_FROM=python:3-slim
 FROM $BUILD_FROM
 
 COPY docker/ensure_pip3.sh /ensure_pip3.sh
