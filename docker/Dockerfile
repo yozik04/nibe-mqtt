@@ -1,4 +1,4 @@
-ARG BUILD_FROM=python:3-slim
+ARG BUILD_FROM=python:3-alpine
 FROM $BUILD_FROM
 
 COPY docker/ensure_pip3.sh /ensure_pip3.sh
