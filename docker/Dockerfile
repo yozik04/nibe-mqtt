@@ -8,6 +8,8 @@ COPY . /src
 COPY config_example.yaml /default/config_example.yaml
 COPY docker/run.sh /run.sh
 
+EXPOSE 9999/udp
+
 RUN pip3 install /src && rm -fr /src
 
 CMD [ "/run.sh" ]
