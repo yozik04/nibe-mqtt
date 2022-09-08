@@ -26,6 +26,26 @@ Uses [nibe](https://github.com/yozik04/nibe) library which supports connections:
 
 Additionally, supports some S series through TCP Modbus (experimental)
 
+## Installation
+### PyPi
+It is possible to install directly from PyPi
+```bash
+pip3 install nibe-mqtt
+```
+
+Then you will be able to run the service with command
+```bash
+nibe-mqtt -c config.yaml
+```
+
+### Docker
+See [Docker Hub](https://hub.docker.com/repository/docker/yozik04/nibe-mqtt) for available versions (tags)
+
+Run with:
+```bash
+docker run -tip -v "/Users/myuser/Desktop/config.yaml:/config/nibe-mqtt/config.yaml:ro" yozik04/nibe-mqtt:latest
+```
+
 ## Basic configuration
 
 ### With NibeGW:
