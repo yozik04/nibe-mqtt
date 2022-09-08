@@ -5,8 +5,9 @@ import logging
 import sys
 from pathlib import Path
 
-from nibe_mqtt import cfg
+from nibe_mqtt import cfg, __version__ as nibe_mqtt_version
 from nibe_mqtt.service import Service
+from nibe import __version__ as nibe_lib_version
 
 if sys.version_info < (
     3,
@@ -26,6 +27,8 @@ def main():
     service = Service(conf)
 
     logging.basicConfig(**conf["logging"])
+
+    logging.info(f"Running Nibe MQTT {nibe_mqtt_version} service with Nibe {nibe_lib_version} lib")
 
     loop = asyncio.get_event_loop()
     loop.run_until_complete(service.start())
