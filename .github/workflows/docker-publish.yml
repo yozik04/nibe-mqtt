@@ -23,7 +23,7 @@ jobs:
         images: |
           yozik04/nibe-mqtt
         tags: |
-          type=ref,event=branch
+          type=raw,value=latest,enable={{is_default_branch}}
           type=pep440,pattern={{version}}
           type=pep440,pattern={{major}}.{{minor}}
     - name: Set up QEMU
