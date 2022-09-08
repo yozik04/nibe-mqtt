@@ -43,7 +43,7 @@ See [Docker Hub](https://hub.docker.com/repository/docker/yozik04/nibe-mqtt) for
 
 Run with:
 ```bash
-docker run -tip -v "/Users/myuser/Desktop/config.yaml:/config/nibe-mqtt/config.yaml:ro" yozik04/nibe-mqtt:latest
+docker run -ti --pull=always -p 9999:9999 -v "/Users/myuser/Desktop/config.yaml:/config/nibe-mqtt/config.yaml:ro" yozik04/nibe-mqtt:latest
 ```
 
 ## Basic configuration
