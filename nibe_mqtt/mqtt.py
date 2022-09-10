@@ -45,7 +45,7 @@ class MqttConnection:
         self._client.on_message = self._on_message_cb
 
     def _on_connect_cb(self, client, userdata, flags, result, properties=None):
-        logger.info("MQTT connected")
+        logger.warning("MQTT connected")
 
         self._client.publish(
             self._availability_topic, "online", retain=self._conf["retain_availability"]
@@ -53,7 +53,7 @@ class MqttConnection:
         self._client.subscribe(f"{self._conf['prefix']}/coils/+/set")
 
     def _on_disconnect_cb(self, client, userdata, rc, properties=None):
-        logger.info("MQTT disconnected")
+        logger.warning("MQTT disconnected")
 
     def _on_message_cb(self, client, userdata, msg: MQTTMessage):
         coil_name = msg.topic.removeprefix(self._conf["prefix"]).split("/")[2]
