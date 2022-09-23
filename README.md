@@ -87,6 +87,9 @@ nibe:
 
 For all configuration options lookup in config.py
 
+## Supported coils
+See the list of available parameters [here](https://github.com/yozik04/nibe/tree/master/nibe/data)
+
 ## Word swap
 You need to specify `word_swap` setting to let this library understand how to decode 32-bit integers (mostly counters)
 
