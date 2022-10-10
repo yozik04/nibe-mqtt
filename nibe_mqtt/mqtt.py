@@ -106,7 +106,17 @@ class MqttConnection:
         uom = coil.unit
         if uom is not None:
             config["unit_of_measurement"] = uom
-
+            if uom == "°C":
+                config["device_class"] = "temperature"
+                config["state_class"] = "measurement"
+            elif uom in ["h", "min"]:
+                config["device_class"] = "duration"
+            elif uom in ["kW", "W"]:
+                config["device_class"] = "power"
+            elif uom == "kWh":
+                config["device_class"] = "energy"
+            elif uom == "Hz":
+                config["device_class"] = "frequency"
         if coil.is_boolean:
             if coil.is_writable:  # switch
                 component = "switch"
