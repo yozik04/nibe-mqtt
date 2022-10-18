@@ -54,8 +54,7 @@ nibe_schema = Schema(
         Optional("poll"): {
             Optional("interval", default=60): All(int, Range(min=5, max=60 * 60 * 24)),
             Optional("coils"): [str, int],
-        },
-        Optional("retry_delays", default=[0.0, 0.5]): [float],
+        }
     }
 )
 

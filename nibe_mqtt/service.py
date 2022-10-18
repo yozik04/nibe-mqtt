@@ -2,28 +2,27 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Union
+from typing import Set, Union
 
 from nibe.coil import Coil
 from nibe.connection import Connection
-from nibe.exceptions import (CoilReadTimeoutException, CoilWriteException,
-                             CoilWriteTimeoutException, CoilNotFoundException, )
+from nibe.exceptions import CoilWriteException, CoilNotFoundException
 from nibe.heatpump import HeatPump
 from slugify import slugify
 
 from nibe_mqtt import cfg
 from nibe_mqtt.mqtt import MqttConnection, MqttHandler
-from nibe_mqtt.utils import retry
 
 logger = logging.getLogger("nibe").getChild(__name__)
 
 
 class Service(MqttHandler):
+    announced_coils: Set[Coil]
+
     def __init__(self, conf: dict):
         self.conf = conf
         self.heatpump = HeatPump(conf["nibe"]["model"])
         self.heatpump.word_swap = conf["nibe"]["word_swap"]
-        self.heatpump.initialize()
         self.announced_coils = set()
 
         self.heatpump.subscribe(HeatPump.COIL_UPDATE_EVENT, self.on_coil_update)
@@ -36,11 +35,6 @@ class Service(MqttHandler):
             raise AssertionError("Invalid or no connection type specified")
 
         self.poller = None
-        poll_config = conf["nibe"].get("poll")
-        if poll_config is not None:
-            self.poller = PollService(self, poll_config)
-
-        self.retry_delays = conf["nibe"]["retry_delays"]
 
         self.mqtt_client = MqttConnection(self, conf["mqtt"])
 
@@ -85,22 +79,14 @@ class Service(MqttHandler):
             logger.exception("Unhandled exception", e)
 
     async def read_coil(self, coil: Coil):
-        decorator = retry(
-            retry_delays=self.retry_delays, exeptions=(CoilReadTimeoutException,)
-        )
-        return await decorator(self.connection.read_coil)(coil)
+        return await self.connection.read_coil(coil)
 
     async def write_coil(self, coil: Coil) -> None:
         refresh_required = True
         try:
             coil_value = coil.value
-            decorator = retry(
-                retry_delays=self.retry_delays, exeptions=(CoilWriteTimeoutException,)
-            )
-            await decorator(self.connection.write_coil)(coil)
-            if (
-                coil_value == coil.value
-            ):  # if coil value did not change while we were writing, just publish to MQTT
+            await self.connection.write_coil(coil)
+            if coil_value == coil.value:  # if coil value did not change while we were writing, just publish to MQTT
                 self.on_coil_update(coil)
                 refresh_required = False
             else:  # if value has changed we do not know what is the current state
@@ -119,12 +105,15 @@ class Service(MqttHandler):
                 logger.exception("Unhandled exception during read", e)
 
     async def start(self):
+        await self.heatpump.initialize()
         await self.connection.start()
 
-        self.mqtt_client.start()
-
-        if self.poller is not None:
+        poll_config = self.conf["nibe"].get("poll")
+        if poll_config is not None:
+            self.poller = PollService(self, poll_config)
             self.poller.start()
+
+        self.mqtt_client.start()
 
     def on_coil_update(self, coil: Coil):
         if coil not in self.announced_coils:
