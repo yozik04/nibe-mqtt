@@ -90,6 +90,9 @@ For all configuration options lookup in config.py
 ## Supported coils
 See the list of available parameters [here](https://github.com/yozik04/nibe/tree/master/nibe/data)
 
+## Writing Registers
+See the list of supported coils to find out which registers can be written (set). For setting a register/coil, publish your data under the following topic: `[prefix]/[coil]/set`. Example: Publish "1" to `nibe/coils/alarm-reset-45171/set` for resetting an alarm.
+
 ## Word swap
 You need to specify `word_swap` setting to let this library understand how to decode 32-bit integers (mostly counters)
 
