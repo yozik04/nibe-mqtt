@@ -61,10 +61,17 @@ class Service(MqttHandler):
         )
 
     def _get_device_info(self) -> dict:
+        if "nibegw" in conf["nibe"]:
+            address = conf["nibe"]["nibegw"]["ip"]
+        elif "modbus" in conf["nibe"]:
+            address = conf["nibe"]["modbus"]["url"] + f"-{conf['nibe']['modbus']['slave_id']}"
+        else:
+            raise AssertionError("Connection type not supported")
+
         return {
             "model": self.conf["nibe"]["model"].name,
             "name": "Nibe heatpump integration",
-            "id": slugify("Nibe " + self.conf["nibe"]["nibegw"]["ip"]),
+            "id": slugify("Nibe " + address),
         }
 
     def handle_coil_set(self, name, value: str):
