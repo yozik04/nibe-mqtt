@@ -5,6 +5,9 @@ voluptuous>=0.13.0
 pyyaml>=6.0
 python-slugify>=6.0.0
 
+pytest
+pytest-asyncio
+
 tox>=3.0.0
 black>=22.0.0
 isort>=5.0.0

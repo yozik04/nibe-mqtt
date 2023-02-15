@@ -1,7 +1,7 @@
 __pycache__
 .idea
 /.vscode
-/venv
+/.venv
 .DS_Store
 *.ipynb
 .coverage
@@ -10,3 +10,4 @@ coverage.xml
 /nibe_mqtt.egg-info
 /.tox
 config.yaml
+.pytest_cache
