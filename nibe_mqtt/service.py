@@ -61,10 +61,10 @@ class Service(MqttHandler):
         )
 
     def _get_device_info(self) -> dict:
-        if "nibegw" in conf["nibe"]:
-            address = conf["nibe"]["nibegw"]["ip"]
-        elif "modbus" in conf["nibe"]:
-            address = conf["nibe"]["modbus"]["url"] + f"-{conf['nibe']['modbus']['slave_id']}"
+        if "nibegw" in self.conf["nibe"]:
+            address = self.conf["nibe"]["nibegw"]["ip"]
+        elif "modbus" in self.conf["nibe"]:
+            address = self.conf["nibe"]["modbus"]["url"] + f"-{self.conf['nibe']['modbus']['slave_id']}"
         else:
             raise AssertionError("Connection type not supported")
 
