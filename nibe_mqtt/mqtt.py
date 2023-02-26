@@ -5,7 +5,7 @@ import os
 from abc import ABC, abstractmethod
 from typing import Union
 
-from nibe.coil import Coil
+from nibe.coil import Coil, CoilData
 from paho.mqtt.client import Client, MQTTMessage
 
 logger = logging.getLogger("nibe").getChild(__name__)
@@ -75,10 +75,10 @@ class MqttConnection:
     def _get_coil_state_topic(self, coil: Coil):
         return f"{self._conf['prefix']}/coils/{coil.name}"
 
-    def publish_coil_state(self, coil: Coil):
+    def publish_coil_state(self, coil_data: CoilData):
         self._client.publish(
-            self._get_coil_state_topic(coil),
-            coil.value,
+            self._get_coil_state_topic(coil_data.coil),
+            coil_data.value,
             retain=self._conf["retain_state"],
         )
 
@@ -124,7 +124,7 @@ class MqttConnection:
             else:  # binary_sensor
                 component = "binary_sensor"
         elif coil.is_writable:  # switch
-            if coil.mappings:
+            if coil.has_mappings:
                 component = "select"
                 config["command_topic"] = f"{config['state_topic']}/set"
                 config["options"] = list(coil.reverse_mappings.keys())

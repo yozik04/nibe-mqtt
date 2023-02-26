@@ -3,6 +3,8 @@ from unittest import mock
 
 import pytest
 
+from nibe.coil import CoilData
+
 from nibe_mqtt.config import schema
 from nibe_mqtt.service import Service
 
@@ -45,7 +47,6 @@ def mqtt_connection():
     return mock.Mock(spec=MqttConnection)
 
 
-@pytest.mark.asyncio
 async def test_service_nibegw(nibegw_config):
     service = Service(nibegw_config)
 
@@ -54,11 +55,10 @@ async def test_service_nibegw(nibegw_config):
     assert len(service.heatpump.get_coils()) > 0
 
     outdoor_temperature = service.heatpump.get_coil_by_address(40004)
-    outdoor_temperature.value = 10
-    service.on_coil_update(outdoor_temperature)
+    coil_data = CoilData(outdoor_temperature, 10)
+    service.on_coil_update(coil_data)
 
 
-@pytest.mark.asyncio
 async def test_service_modbus(modbus_config):
     service = Service(modbus_config)
 
@@ -67,5 +67,5 @@ async def test_service_modbus(modbus_config):
     assert len(service.heatpump.get_coils()) > 0
 
     outdoor_temperature = service.heatpump.get_coil_by_address(30002)
-    outdoor_temperature.value = 10
-    service.on_coil_update(outdoor_temperature)
+    coil_data = CoilData(outdoor_temperature, 10)
+    service.on_coil_update(coil_data)
