@@ -91,7 +91,6 @@ class Service(MqttHandler):
     async def write_coil(self, coil_data: CoilData) -> None:
         refresh_required = True
         try:
-            logger.info(f"Writing {coil_data}")
             await self.connection.write_coil(coil_data)
         except WriteException as e:
             logger.error(e)
