@@ -16,6 +16,9 @@ class MqttHandler(ABC):
     def handle_coil_set(self, name, value):
         pass
 
+    def on_mqtt_connected(self):
+        pass
+
 
 class MqttConnection:
     def __init__(self, handler: MqttHandler, conf: dict):
@@ -36,10 +39,6 @@ class MqttConnection:
                 username=conf["username"], password=conf["password"]
             )
 
-        self._client.will_set(
-            self._availability_topic, "offline", retain=conf["retain_availability"]
-        )
-
         self._client.on_connect = self._on_connect_cb
         self._client.on_disconnect = self._on_disconnect_cb
         self._client.on_message = self._on_message_cb
@@ -47,10 +46,15 @@ class MqttConnection:
     def _on_connect_cb(self, client, userdata, flags, result, properties=None):
         logger.warning("MQTT connected")
 
+        self._client.will_set(
+            self._availability_topic, "offline", retain=self._conf["retain_availability"]
+        )
         self._client.publish(
             self._availability_topic, "online", retain=self._conf["retain_availability"]
         )
         self._client.subscribe(f"{self._conf['prefix']}/coils/+/set")
+
+        self._handler.on_mqtt_connected()
 
     def _on_disconnect_cb(self, client, userdata, rc, properties=None):
         logger.warning("MQTT disconnected")

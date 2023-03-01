@@ -124,6 +124,9 @@ class Service(MqttHandler):
         if self.poller is not None:
             self.poller.register_update(coil_data.coil)
 
+    def on_mqtt_connected(self):
+        self.announced_coils.clear()
+
 
 class PollService:
     LAST_UPDATE_ATTR = "last_update"
