@@ -57,7 +57,6 @@ mqtt:
   password: pass
 nibe:
   model: F1255
-  word_swap: true
   nibegw:
     ip: 192.168.1.3
   poll:
@@ -94,13 +93,21 @@ See the list of available parameters [here](https://github.com/yozik04/nibe/tree
 See the list of supported coils to find out which registers can be written (set). For setting a register/coil, publish your data under the following topic: `[prefix]/[coil]/set`. Example: Publish `ONE TIME INCREASE` to `nibe/coils/temporary-lux-48132/set` for turning on temporary hot water lux mode.
 
 ## Word swap
-You need to specify `word_swap` setting to let this library understand how to decode 32-bit integers (mostly counters)
+You might need to specify `word_swap` setting to let underneath library understand how to decode 32-bit integers (mostly counters). For most of the heat pumps with NibeGW connection method it will be auto detected (since `nibe-mqtt 1.1.0`, `nibe 2.1.0`).
 
-There is a setting called `word swap` in Nibe service menu 5.3.11 (`modbus settings`).
+```yaml
+...
+nibe:
+  ...
+  word_swap: true
+  ...
+```
+
+You can find the setting value in you Heat pump service menu 5.3.11 (`modbus settings`), there is a setting called `word swap`.
 
 You need to set `word_swap` setting in yaml to match the setting in the service menu.
 
-Failing to do so will start throwing errors about values out of bounds.
+Failing to do so will start throwing errors with decoding errors of 32-bit registers.
 
 ## Disclaimer
 Nibe is registered mark of NIBE Energy Systems.

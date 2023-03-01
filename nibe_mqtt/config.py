@@ -50,7 +50,7 @@ nibe_schema = Schema(
             Optional("options", default=None): Any(None, dict),
         },
         Required("model"): heatpump_model,
-        Optional("word_swap", default=True): bool,
+        Optional("word_swap", default=None): Any(None, bool),
         Optional("poll"): {
             Optional("interval", default=60): All(int, Range(min=5, max=60 * 60 * 24)),
             Optional("coils"): [str, int],
