@@ -52,6 +52,7 @@ docker run -ti --pull=always --rm -p 9999:9999/udp -v "/Users/myuser/Desktop/con
 ```yaml
 mqtt:
   host: 192.168.1.2
+  port: 1883
   protocol: 5
   username: user
   password: pass
