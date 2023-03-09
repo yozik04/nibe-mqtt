@@ -3,12 +3,12 @@ logging:
   format: "%(asctime)s - %(levelname)-8s - %(threadName)-10s - %(name)s - %(message)s"
 mqtt:
   host: 192.168.1.2
+  port: 1883
   protocol: 5
   username: mqtt_user
   password: mqtt_pass
 nibe:
   model: F1255
-  word_swap: true
   nibegw:
     ip: 192.168.1.3
     listening_port: 9999
