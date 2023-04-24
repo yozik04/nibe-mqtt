@@ -36,7 +36,7 @@ jobs:
         username: yozik04
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     - name: Build
-      uses: docker/bake-action@v2
+      uses: docker/bake-action@v3
       with:
         files: |
           ./docker/docker-bake.hcl
