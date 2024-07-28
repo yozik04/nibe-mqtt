@@ -86,7 +86,8 @@ class MqttConnection:
             retain=self._conf["retain_state"],
         )
 
-    def publish_discovery(self, coil: Coil, device_info: dict):
+    def publish_discovery(self, coil_data: CoilData, device_info: dict):
+        coil = coil_data.coil
         component = "sensor"
 
         device_id = device_info.get("id")

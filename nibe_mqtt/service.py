@@ -2,11 +2,12 @@ import asyncio
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
+import re
 from typing import Set, Union
 
 from nibe.coil import Coil, CoilData
 from nibe.connection import Connection
-from nibe.exceptions import WriteException, CoilNotFoundException
+from nibe.exceptions import WriteException, CoilNotFoundException, NoMappingException
 from nibe.heatpump import HeatPump
 from slugify import slugify
 
@@ -18,6 +19,7 @@ logger = logging.getLogger("nibe").getChild(__name__)
 
 class Service(MqttHandler):
     announced_coils: Set[Coil]
+    re_unknown_value = re.compile(r"UNKNOWN \((\d+)\)")
 
     def __init__(self, conf: dict):
         self.conf = conf
@@ -115,14 +117,37 @@ class Service(MqttHandler):
         self.mqtt_client.start()
 
     def on_coil_update(self, coil_data: CoilData):
-        if coil_data.coil not in self.announced_coils:
-            self.mqtt_client.publish_discovery(coil_data.coil, self._get_device_info())
-            self.announced_coils.add(coil_data.coil)
+        coil = coil_data.coil
+        if coil.has_mappings and isinstance(coil_data.value, str):
+            self._update_coil_mappings(coil, coil_data.value)
 
-        self.mqtt_client.publish_coil_state(coil_data)
+        self._publish_coil_updates(coil_data)
 
         if self.poller is not None:
-            self.poller.register_update(coil_data.coil)
+            self.poller.register_update(coil)
+
+    def _update_coil_mappings(self, coil, value):
+        try:
+            coil.get_reverse_mapping_for(value)
+        except NoMappingException:
+            logger.warning(f"No mapping found for {coil.name} value: {value}")
+
+            # If value in format `UNKNOWN (123)`, then extract the number
+            match = self.re_unknown_value.match(value)
+            if match:
+                current_mappings = coil.mappings.copy()
+                unknown_value = int(match.group(1))
+                current_mappings[str(unknown_value)] = value
+                coil.set_mappings(current_mappings)
+                self.announced_coils.discard(coil)
+
+    def _publish_coil_updates(self, coil_data):
+        coil = coil_data.coil
+        if coil not in self.announced_coils:
+            self.mqtt_client.publish_discovery(coil_data, self._get_device_info())
+            self.announced_coils.add(coil)
+
+        self.mqtt_client.publish_coil_state(coil_data)
 
     def on_mqtt_connected(self):
         self.announced_coils.clear()
