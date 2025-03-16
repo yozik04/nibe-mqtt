@@ -1,14 +1,17 @@
 # Nibe MQTT integration
 MQTT integration for controlling Nibe heatpumps. Supports HomeAssistant MQTT Autodiscovery.
 
-Uses [nibe](https://github.com/yozik04/nibe) library which supports connections:
-  - RS485 communication via NibeGW developed by Pauli Anttila for [Openhab's integration](https://www.openhab.org/addons/bindings/nibeheatpump/)
-  - TCP/Serial Modbus (experimental)
+## Connection methods
+
+- RS485 hardwired using NibeGW on Arduino or RPi. NibeGW was developed by Pauli Anttila for [Openhab's integration](https://www.openhab.org/addons/bindings/nibeheatpump/).
+- TCP Modbus for S Models
+- Serial Modbus for Nibe Modbus 40)
 
 #### Supported heatpump models
+
  - F1145
- - F1155
  - F1245
+ - F1155
  - F1255
  - F1345
  - F1355
@@ -16,8 +19,17 @@ Uses [nibe](https://github.com/yozik04/nibe) library which supports connections:
  - F470
  - F730
  - F750
+ - S320
+ - S325
+ - S330
+ - S332
+ - S735
+ - S1156
+ - S1256
+ - S2125
  - SMO20
  - SMO40
+ - SMOS40
  - VVM225
  - VVM310
  - VVM320
@@ -111,8 +123,11 @@ You need to set `word_swap` setting in yaml to match the setting in the service 
 Failing to do so will start throwing errors with decoding errors of 32-bit registers.
 
 ## Disclaimer
+
 Nibe is registered mark of NIBE Energy Systems.
 
-The code was developed as a way of integrating personally owned Nibe heatpump, and it cannot be used for other purposes. It is not affiliated with any company, and it doesn't have a commercial intent.
+The code was developed as a way of integrating personally owned Nibe heatpump, and it cannot be used for other purposes. It is not affiliated with any company, and it doesn't have commercial intent.
 
 The code is provided AS IS and the developers will not be held responsible for failures in the heatpump operation or any other malfunction.
+
+**IMPORTANT**: Using this library to control your heatpump is done at your own risk. The developers assume no responsibility for any damage that may occur to your heating system, property, or for any unsafe conditions that may result from improper use. Changing heatpump parameters can potentially damage your equipment or create hazardous conditions. Users should have sufficient knowledge of their heating system before attempting to control it.
