@@ -7,45 +7,69 @@ on:
       - master
     tags:
 
+env:
+  REGISTRY_IMAGE: yozik04/nibe-mqtt
+
 jobs:
   test:
     name: Test
     uses: ./.github/workflows/test.yml
   prepare:
-    name: Prepare matrix
+    name: Prepare
     runs-on: ubuntu-latest
     needs: test
     outputs:
-      matrix: ${{ steps.generate.outputs.matrix }}
+      matrix: ${{ steps.platforms.outputs.matrix }}
     steps:
-    - uses: actions/checkout@v6
-    - name: Generate matrix
-      id: generate
-      uses: docker/bake-action/subaction/matrix@v6
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Create matrix
+      id: platforms
+      run: |
+        echo "matrix=$(docker buildx bake -f ./docker/docker-bake.hcl build --print | jq -cr '.target.build.platforms')" >> $GITHUB_OUTPUT
+    - name: Show matrix
+      run: |
+        echo ${{ steps.platforms.outputs.matrix }}
+    - name: Docker meta
+      id: meta
+      uses: docker/metadata-action@v5
       with:
-        files: ./docker/docker-bake.hcl
-        target: build
-        fields: platforms
-  docker:
-    name: Build ${{ matrix.platforms }}
+        images: ${{ env.REGISTRY_IMAGE }}
+        tags: |
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=pep440,pattern={{version}}
+          type=pep440,pattern={{major}}.{{minor}}
+    - name: Rename meta bake definition file
+      run: |
+        mv "${{ steps.meta.outputs.bake-file }}" "${{ runner.temp }}/bake-meta.json"
+    - name: Upload meta bake definition
+      uses: actions/upload-artifact@v4
+      with:
+        name: bake-meta
+        path: ${{ runner.temp }}/bake-meta.json
+        if-no-files-found: error
+        retention-days: 1
+
+  build:
+    name: Build ${{ matrix.platform }}
     runs-on: ubuntu-latest
     needs: prepare
     strategy:
       fail-fast: false
       matrix:
-        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
+        platform: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
-    - uses: actions/checkout@v6
-    - name: Docker meta
-      id: meta
-      uses: docker/metadata-action@v5
+    - name: Prepare
+      run: |
+        platform=${{ matrix.platform }}
+        echo "PLATFORM_PAIR=${platform//\//-}" >> $GITHUB_ENV
+    - name: Checkout
+      uses: actions/checkout@v6
+    - name: Download meta bake definition
+      uses: actions/download-artifact@v4
       with:
-        images: |
-          yozik04/nibe-mqtt
-        tags: |
-          type=raw,value=latest,enable={{is_default_branch}}
-          type=pep440,pattern={{version}}
-          type=pep440,pattern={{major}}.{{minor}}
+        name: bake-meta
+        path: ${{ runner.temp }}
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v3
     - name: Set up Docker Buildx
@@ -56,12 +80,57 @@ jobs:
         username: yozik04
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
     - name: Build
+      id: bake
       uses: docker/bake-action@v6
       with:
         files: |
           ./docker/docker-bake.hcl
-          ${{ steps.meta.outputs.bake-file }}
+          cwd://${{ runner.temp }}/bake-meta.json
         targets: build
         set: |
-          *.platform=${{ matrix.platforms }}
-        push: true
+          *.platform=${{ matrix.platform }}
+          *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+    - name: Export digest
+      run: |
+        mkdir -p ${{ runner.temp }}/digests
+        digest="${{ fromJSON(steps.bake.outputs.metadata).build['containerimage.digest'] }}"
+        touch "${{ runner.temp }}/digests/${digest#sha256:}"
+    - name: Upload digest
+      uses: actions/upload-artifact@v4
+      with:
+        name: digests-${{ env.PLATFORM_PAIR }}
+        path: ${{ runner.temp }}/digests/*
+        if-no-files-found: error
+        retention-days: 1
+
+  merge:
+    name: Merge manifests
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+    - name: Download meta bake definition
+      uses: actions/download-artifact@v4
+      with:
+        name: bake-meta
+        path: ${{ runner.temp }}
+    - name: Download digests
+      uses: actions/download-artifact@v4
+      with:
+        path: ${{ runner.temp }}/digests
+        pattern: digests-*
+        merge-multiple: true
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
+        username: yozik04
+        password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+    - name: Create manifest list and push
+      working-directory: ${{ runner.temp }}/digests
+      run: |
+        docker buildx imagetools create $(jq -cr '.target."docker-metadata-action".tags | map(select(startswith("${{ env.REGISTRY_IMAGE }}")) | "-t " + .) | join(" ")' ${{ runner.temp }}/bake-meta.json) \
+          $(printf '${{ env.REGISTRY_IMAGE }}@sha256:%s ' *)
+    - name: Inspect image
+      run: |
+        docker buildx imagetools inspect ${{ env.REGISTRY_IMAGE }}:$(jq -r '.target."docker-metadata-action".args.DOCKER_META_VERSION' ${{ runner.temp }}/bake-meta.json)
