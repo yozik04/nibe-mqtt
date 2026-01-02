@@ -80,13 +80,33 @@ class Service(MqttHandler):
     def handle_coil_set(self, name, value: str):
         try:
             coil = self.heatpump.get_coil_by_name(name)
-            coil_data = CoilData(coil, value)
+            converted_value = self._convert_mqtt_value_for_coil(coil, value)
+            coil_data = CoilData(coil, converted_value)
 
             asyncio.create_task(self.write_coil(coil_data))
         except (AssertionError, CoilNotFoundException) as e:
             logger.error(e)
-        except Exception as e:
-            logger.exception("Unhandled exception", e)
+        except Exception:
+            logger.exception("Unhandled exception")
+
+    def _convert_mqtt_value_for_coil(self, coil: Coil, value: str):
+        """Convert MQTT value (e.g., ON/OFF) to format expected by coil."""
+        # For coils with mappings, pass the value as-is - the coil library will handle it
+        if coil.has_mappings:
+            return value
+
+        # Try to cast to numeric for non-mapped coils
+        try:
+            return int(value)
+        except ValueError:
+            pass
+
+        try:
+            return float(value)
+        except ValueError:
+            pass
+
+        return value
 
     async def read_coil(self, coil: Coil):
         return await self.connection.read_coil(coil)
@@ -97,14 +117,14 @@ class Service(MqttHandler):
             await self.connection.write_coil(coil_data)
         except WriteException as e:
             logger.error(e)
-        except Exception as e:
-            logger.exception("Unhandled exception during write", e)
+        except Exception:
+            logger.exception("Unhandled exception during write")
 
         if refresh_required:
             try:
                 await self.read_coil(coil_data.coil)
-            except Exception as e:
-                logger.exception("Unhandled exception during read", e)
+            except Exception:
+                logger.exception("Unhandled exception during read")
 
     async def start(self):
         await self.heatpump.initialize()

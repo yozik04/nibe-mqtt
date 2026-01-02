@@ -63,7 +63,6 @@ class MqttConnection:
     def _on_message_cb(self, client, userdata, msg: MQTTMessage):
         coil_name = msg.topic.removeprefix(self._conf["prefix"]).split("/")[2]
         value = msg.payload.decode("utf-8")
-        value = _try_cast_to_numeric(value)
 
         logger.info(f"Received MQTT command set {coil_name} to {value}")
 
@@ -130,11 +129,22 @@ class MqttConnection:
             elif uom == "Hz":
                 config["device_class"] = "frequency"
         if coil.is_boolean:
+            # Boolean coils always have mappings (either default OFF/ON or custom)
+            # Get the actual mapped values for 0 and 1
+            off_value = coil.mappings.get("0", "OFF")
+            on_value = coil.mappings.get("1", "ON")
+
             if coil.is_writable:  # switch
                 component = "switch"
                 config["command_topic"] = f"{config['state_topic']}/set"
+                config["payload_on"] = on_value
+                config["payload_off"] = off_value
+                config["state_on"] = on_value
+                config["state_off"] = off_value
             else:  # binary_sensor
                 component = "binary_sensor"
+                config["payload_on"] = on_value
+                config["payload_off"] = off_value
         elif coil.is_writable:  # switch
             if coil.has_mappings:
                 component = "select"
@@ -154,17 +164,3 @@ class MqttConnection:
             json.dumps(config),
             retain=self._conf["retain_state"],
         )
-
-
-def _try_cast_to_numeric(value) -> str | int | float:
-    try:
-        return int(value)
-    except ValueError:
-        pass
-
-    try:
-        return float(value)
-    except ValueError:
-        pass
-
-    return value
