@@ -11,10 +11,29 @@ jobs:
   test:
     name: Test
     uses: ./.github/workflows/test.yml
-  docker:
-    name: Docker
+  prepare:
+    name: Prepare matrix
     runs-on: ubuntu-latest
     needs: test
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+    - uses: actions/checkout@v6
+    - name: Generate matrix
+      id: generate
+      uses: docker/bake-action/subaction/matrix@v6
+      with:
+        workdir: ./docker
+        target: build
+        fields: platforms
+  docker:
+    name: Build ${{ matrix.platforms }}
+    runs-on: ubuntu-latest
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
     steps:
     - uses: actions/checkout@v6
     - name: Docker meta
@@ -43,4 +62,6 @@ jobs:
           ./docker/docker-bake.hcl
           ${{ steps.meta.outputs.bake-file }}
         targets: build
+        set: |
+          *.platform=${{ matrix.platforms }}
         push: true
