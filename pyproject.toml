@@ -4,7 +4,6 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nibe-mqtt"
-version = "0.6.0"
 authors = [
     {name = "Jevgeni Kiski", email = "yozik04@gmail.com"}
 ]
@@ -24,6 +23,7 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
 ]
 requires-python = ">=3.9"
 dependencies = [
@@ -33,6 +33,10 @@ dependencies = [
     "pyyaml>=6.0",
     "python-slugify>=6.0.0",
 ]
+dynamic = ["version"]
+
+[tool.setuptools.dynamic]
+version = {attr = "nibe_mqtt.__version__"}
 
 [project.urls]
 Homepage = "https://github.com/yozik04/nibe-mqtt"
