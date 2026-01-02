@@ -26,6 +26,7 @@ class MqttConnection:
     def __init__(self, handler: MqttHandler, conf: dict):
         self._conf = conf
         self._handler = handler
+        self._loop = None
 
         self._availability_topic = f"{conf['prefix']}/availability"
 
@@ -66,9 +67,16 @@ class MqttConnection:
 
         logger.info(f"Received MQTT command set {coil_name} to {value}")
 
-        asyncio.get_running_loop().call_soon_threadsafe(self._handler.handle_coil_set, coil_name, value)
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._handler.handle_coil_set, coil_name, value)
+        else:
+            logger.error("Event loop not set, cannot handle MQTT message")
 
     def start(self):
+        # Store the event loop reference while we're in an async context
+        # This is needed because MQTT callbacks run in a separate thread
+        self._loop = asyncio.get_running_loop()
+
         self._client.connect_async(host=self._conf["host"], port=self._conf["port"])
 
         self._client.loop_start()
