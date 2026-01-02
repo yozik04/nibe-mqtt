@@ -7,18 +7,23 @@ MQTT integration for controlling Nibe heatpumps. Supports HomeAssistant MQTT Aut
 - TCP Modbus for S Models
 - Serial Modbus for Nibe Modbus 40)
 
-#### Supported heatpump models
+### Supported heatpump models
 
- - F1145
- - F1245
- - F1155
- - F1255
- - F1345
- - F1355
+#### F series
+
  - F370
  - F470
  - F730
  - F750
+ - F1145
+ - F1155
+ - F1245
+ - F1255
+ - F1345
+ - F1355
+
+#### S series
+
  - S320
  - S325
  - S330
@@ -27,16 +32,27 @@ MQTT integration for controlling Nibe heatpumps. Supports HomeAssistant MQTT Aut
  - S1156
  - S1256
  - S2125
+
+#### SMO series
+
  - SMO20
  - SMO40
+
+#### SMOS series
+
  - SMOS40
+
+#### VVM series
+
  - VVM225
  - VVM310
  - VVM320
  - VVM325
  - VVM500
 
-Additionally, supports some S series through TCP Modbus (experimental)
+#### VVMS series
+
+ - VVMS325
 
 ## Installation
 ### PyPi
