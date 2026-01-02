@@ -46,14 +46,8 @@ Homepage = "https://github.com/yozik04/nibe-mqtt"
 nibe-mqtt = "nibe_mqtt.console_scripts.nibe_mqtt_service:main"
 
 [tool.setuptools]
+packages = ["nibe_mqtt"]
 zip-safe = true
-include-package-data = true
-
-[tool.setuptools.packages.find]
-exclude = ["tests*"]
-
-[tool.setuptools.package-data]
-"*" = ["*.json", "*.md"]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
