@@ -1,22 +1,23 @@
 #!/usr/bin/env python3
+from __future__ import annotations
+
 import argparse
 import asyncio
 import logging
 import sys
 from pathlib import Path
 
-from nibe_mqtt import cfg, __version__ as nibe_mqtt_version
-from nibe_mqtt.service import Service
 from nibe import __version__ as nibe_lib_version
+
+from nibe_mqtt import __version__ as nibe_mqtt_version
+from nibe_mqtt import cfg
+from nibe_mqtt.service import Service
 
 if sys.version_info < (
     3,
     9,
 ):
-    print(
-        "You are using Python %s.%s, but Nibe daemon requires at least Python 3.9"
-        % (sys.version_info[0], sys.version_info[1])
-    )
+    print(f"You are using Python {sys.version_info[0]}.{sys.version_info[1]}, but Nibe daemon requires at least Python 3.9")
     sys.exit(-1)
 
 

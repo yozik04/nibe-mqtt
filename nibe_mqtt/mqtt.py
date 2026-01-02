@@ -1,9 +1,10 @@
+from __future__ import annotations
+
 import asyncio
 import json
 import logging
 import os
 from abc import ABC, abstractmethod
-from typing import Union
 
 from nibe.coil import Coil, CoilData
 from paho.mqtt.client import Client, MQTTMessage
@@ -16,6 +17,7 @@ class MqttHandler(ABC):
     def handle_coil_set(self, name, value):
         pass
 
+    @abstractmethod
     def on_mqtt_connected(self):
         pass
 
@@ -35,9 +37,7 @@ class MqttConnection:
         )
 
         if conf.get("username"):
-            self._client.username_pw_set(
-                username=conf["username"], password=conf["password"]
-            )
+            self._client.username_pw_set(username=conf["username"], password=conf["password"])
 
         self._client.on_connect = self._on_connect_cb
         self._client.on_disconnect = self._on_disconnect_cb
@@ -47,11 +47,11 @@ class MqttConnection:
         logger.warning("MQTT connected")
 
         self._client.will_set(
-            self._availability_topic, "offline", retain=self._conf["retain_availability"]
+            self._availability_topic,
+            "offline",
+            retain=self._conf["retain_availability"],
         )
-        self._client.publish(
-            self._availability_topic, "online", retain=self._conf["retain_availability"]
-        )
+        self._client.publish(self._availability_topic, "online", retain=self._conf["retain_availability"])
         self._client.subscribe(f"{self._conf['prefix']}/coils/+/set")
 
         self._handler.on_mqtt_connected()
@@ -139,7 +139,7 @@ class MqttConnection:
                 config["max"] = coil.max
                 config["step"] = 1 / coil.factor
 
-        config["default_entity_id"] = f'{component}.{unique_id}'
+        config["default_entity_id"] = f"{component}.{unique_id}"
 
         self._client.publish(
             f"{self._conf['discovery_prefix']}/{component}/{device_id}/{coil.name}/config",
@@ -148,7 +148,7 @@ class MqttConnection:
         )
 
 
-def _try_cast_to_numeric(value) -> Union[str, int, float]:
+def _try_cast_to_numeric(value) -> str | int | float:
     try:
         return int(value)
     except ValueError:

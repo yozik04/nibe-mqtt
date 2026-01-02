@@ -1,13 +1,14 @@
+from __future__ import annotations
+
 import asyncio
 import logging
+import re
 from datetime import datetime, timedelta
 from pathlib import Path
-import re
-from typing import Set, Union
 
 from nibe.coil import Coil, CoilData
 from nibe.connection import Connection
-from nibe.exceptions import WriteException, CoilNotFoundException, NoMappingException
+from nibe.exceptions import CoilNotFoundException, NoMappingException, WriteException
 from nibe.heatpump import HeatPump
 from slugify import slugify
 
@@ -18,7 +19,7 @@ logger = logging.getLogger("nibe").getChild(__name__)
 
 
 class Service(MqttHandler):
-    announced_coils: Set[Coil]
+    announced_coils: set[Coil]
     re_unknown_value = re.compile(r"UNKNOWN \((\d+)\)")
 
     def __init__(self, conf: dict):
@@ -156,14 +157,14 @@ class Service(MqttHandler):
 class PollService:
     LAST_UPDATE_ATTR = "last_update"
 
-    def __init__(self, service: "Service", conf: dict):
+    def __init__(self, service: Service, conf: dict):
         self._service = service
         self._heatpump = service.heatpump
 
         self._interval = conf["interval"]
         self._coils = [self._get_coil(key) for key in conf["coils"]]
 
-    def _get_coil(self, name_or_address: Union[str, int]):
+    def _get_coil(self, name_or_address: str | int):
         if isinstance(name_or_address, str):
             return self._heatpump.get_coil_by_name(name_or_address)
         if isinstance(name_or_address, int):
@@ -177,13 +178,8 @@ class PollService:
             await asyncio.sleep(5.0)
             for coil in self._coils:
                 last_update = getattr(coil, self.LAST_UPDATE_ATTR, None)
-                if (
-                    last_update is None
-                    or last_update + timedelta(seconds=self._interval) < datetime.now()
-                ):
-                    logger.info(
-                        f"Polling coil {coil.name}: last_update = {last_update}"
-                    )
+                if last_update is None or last_update + timedelta(seconds=self._interval) < datetime.now():
+                    logger.info(f"Polling coil {coil.name}: last_update = {last_update}")
                     try:
                         await self._service.read_coil(coil)
                     except Exception as e:

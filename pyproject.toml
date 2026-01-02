@@ -2,5 +2,60 @@
 requires = ["setuptools>=46.4.0"]
 build-backend = "setuptools.build_meta"
 
+[project]
+name = "nibe-mqtt"
+version = "0.6.0"
+authors = [
+    {name = "Jevgeni Kiski", email = "yozik04@gmail.com"}
+]
+description = "Nibe heatpump MQTT integration"
+readme = "README.md"
+keywords = ["nibe", "modbus", "library", "nibegw", "mqtt"]
+license = {text = "LGPL 3"}
+classifiers = [
+    "Development Status :: 1 - Planning",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+requires-python = ">=3.9"
+dependencies = [
+    "nibe >=2.7.0,<3.0.0",
+    "paho_mqtt>=1.5.0,<2.0.0",
+    "voluptuous>=0.13.0",
+    "pyyaml>=6.0",
+    "python-slugify>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/yozik04/nibe-mqtt"
+"Bug Tracker" = "https://github.com/yozik04/nibe-mqtt/issues"
+
+[project.scripts]
+nibe-mqtt = "nibe_mqtt.console_scripts.nibe_mqtt_service:main"
+
+[tool.setuptools]
+zip-safe = true
+include-package-data = true
+
+[tool.setuptools.packages.find]
+exclude = ["tests*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.json", "*.md"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+
+[tool.black]
+line-length = 160
+
+[tool.coverage.report]
+show_missing = true

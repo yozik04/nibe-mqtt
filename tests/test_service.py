@@ -1,8 +1,8 @@
+from __future__ import annotations
 
 from unittest import mock
 
 import pytest
-
 from nibe.coil import CoilData
 
 from nibe_mqtt.config import schema
@@ -11,39 +11,45 @@ from nibe_mqtt.service import Service
 
 @pytest.fixture
 def nibegw_config():
-    return schema({
-        "mqtt": {"host": "127.0.0.1"},
-        "nibe": {
-            "nibegw": {"ip": "127.0.0.1"},
-            "model": "F1255"
-        },
-    })
+    return schema(
+        {
+            "mqtt": {"host": "127.0.0.1"},
+            "nibe": {"nibegw": {"ip": "127.0.0.1"}, "model": "F1255"},
+        }
+    )
+
 
 @pytest.fixture
 def modbus_config():
-    return schema({
-        "mqtt": {"host": "127.0.0.1"},
-        "nibe": {
-            "modbus": {"url": "tcp://127.0.0.1:502", "slave_id": 1},
-            "model": "S2125"
-        },
-    })
+    return schema(
+        {
+            "mqtt": {"host": "127.0.0.1"},
+            "nibe": {
+                "modbus": {"url": "tcp://127.0.0.1:502", "slave_id": 1},
+                "model": "S2125",
+            },
+        }
+    )
+
 
 @pytest.fixture(name="nibegw_connection", autouse=True)
 def nibegw_connection():
     from nibe.connection.nibegw import NibeGW
+
     return mock.Mock(spec=NibeGW)
 
 
 @pytest.fixture(name="modbus_connection", autouse=True)
 def modbus_connection():
     from nibe.connection.modbus import Modbus
+
     return mock.Mock(spec=Modbus)
 
 
 @pytest.fixture(name="mqtt_connection", autouse=True)
 def mqtt_connection():
     from nibe_mqtt.mqtt import MqttConnection
+
     return mock.Mock(spec=MqttConnection)
 
 

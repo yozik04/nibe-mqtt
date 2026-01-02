@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 from nibe_mqtt.config import schema
+
 
 def test_nibegw():
     config = schema(
@@ -16,6 +19,7 @@ def test_nibegw():
     assert config["nibe"]["poll"]["interval"] == 60
 
     print(config)
+
 
 def test_modbus():
     config = schema(
