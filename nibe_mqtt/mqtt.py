@@ -103,7 +103,6 @@ class MqttConnection:
         config = {
             "name": coil.title,
             "unique_id": unique_id,
-            "object_id": unique_id,
             "state_topic": self._get_coil_state_topic(coil),
             "availability_topic": self._availability_topic,
             "device": device,
@@ -139,6 +138,8 @@ class MqttConnection:
                 config["min"] = coil.min
                 config["max"] = coil.max
                 config["step"] = 1 / coil.factor
+
+        config["default_entity_id"] = f'{component}.{unique_id}'
 
         self._client.publish(
             f"{self._conf['discovery_prefix']}/{component}/{device_id}/{coil.name}/config",
