@@ -7,7 +7,7 @@ import os
 from abc import ABC, abstractmethod
 
 from nibe.coil import Coil, CoilData
-from paho.mqtt.client import Client, MQTTMessage
+from paho.mqtt.client import CallbackAPIVersion, Client, MQTTMessage
 
 logger = logging.getLogger("nibe").getChild(__name__)
 
@@ -24,14 +24,14 @@ class MqttHandler(ABC):
 
 class MqttConnection:
     def __init__(self, handler: MqttHandler, conf: dict):
-        self._loop = asyncio.get_event_loop()
         self._conf = conf
         self._handler = handler
 
         self._availability_topic = f"{conf['prefix']}/availability"
 
         self._client = Client(
-            "nibe" + os.urandom(8).hex(),
+            CallbackAPIVersion.VERSION1,
+            "nibe-" + os.urandom(8).hex(),
             protocol=conf["protocol"],
             transport="tcp",
         )
@@ -43,7 +43,7 @@ class MqttConnection:
         self._client.on_disconnect = self._on_disconnect_cb
         self._client.on_message = self._on_message_cb
 
-    def _on_connect_cb(self, client, userdata, flags, result, properties=None):
+    def _on_connect_cb(self, client, userdata, flags, reason_code, properties=None):
         logger.warning("MQTT connected")
 
         self._client.will_set(
@@ -56,7 +56,7 @@ class MqttConnection:
 
         self._handler.on_mqtt_connected()
 
-    def _on_disconnect_cb(self, client, userdata, rc, properties=None):
+    def _on_disconnect_cb(self, client, userdata, flags, reason_code, properties=None):
         logger.warning("MQTT disconnected")
 
     def _on_message_cb(self, client, userdata, msg: MQTTMessage):
@@ -66,7 +66,7 @@ class MqttConnection:
 
         logger.info(f"Received MQTT command set {coil_name} to {value}")
 
-        self._loop.call_soon_threadsafe(self._handler.handle_coil_set, coil_name, value)
+        asyncio.get_running_loop().call_soon_threadsafe(self._handler.handle_coil_set, coil_name, value)
 
     def start(self):
         self._client.connect_async(host=self._conf["host"], port=self._conf["port"])

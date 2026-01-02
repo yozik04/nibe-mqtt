@@ -189,13 +189,25 @@ class PollService:
         setattr(coil, self.LAST_UPDATE_ATTR, datetime.now())
 
 
-if __name__ == "__main__":
-    conf = cfg.load(Path("config.yaml"))
+async def run_service(config_path: Path | str, log_version: str = None):
+    """Run the Nibe MQTT service with the given configuration file."""
+    conf = cfg.load(Path(config_path))
 
     service = Service(conf)
 
     logging.basicConfig(**conf["logging"])
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(service.start())
-    loop.run_forever()
+    if log_version:
+        logging.info(log_version)
+
+    await service.start()
+
+    # Keep the service running indefinitely
+    try:
+        await asyncio.Event().wait()
+    except KeyboardInterrupt:
+        pass
+
+
+if __name__ == "__main__":
+    asyncio.run(run_service("config.yaml"))
