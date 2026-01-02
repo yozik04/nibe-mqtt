@@ -23,7 +23,7 @@ jobs:
       id: generate
       uses: docker/bake-action/subaction/matrix@v6
       with:
-        workdir: ./docker
+        files: ./docker/docker-bake.hcl
         target: build
         fields: platforms
   docker:
