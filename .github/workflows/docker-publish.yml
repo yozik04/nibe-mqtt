@@ -87,10 +87,13 @@ jobs:
           ./docker/docker-bake.hcl
           cwd://${{ runner.temp }}/bake-meta.json
         targets: build
+        provenance: true
         set: |
           *.tags=${{ env.REGISTRY_IMAGE }}
           *.platform=${{ matrix.platform }}
           *.output=type=image,push-by-digest=true,name-canonical=true,push=true
+          *.cache-from=type=gha,scope=build-${{ env.PLATFORM_PAIR }}
+          *.cache-to=type=gha,scope=build-${{ env.PLATFORM_PAIR }},mode=max
     - name: Export digest
       run: |
         mkdir -p ${{ runner.temp }}/digests
