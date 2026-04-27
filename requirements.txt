@@ -9,5 +9,5 @@ pytest
 pytest-asyncio
 
 tox>=3.0.0
-black>=22.0.0
+black>=25.11.0
 isort>=5.0.0
