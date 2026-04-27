@@ -8,6 +8,6 @@ python-slugify>=6.0.0
 pytest
 pytest-asyncio
 
-tox>=3.0.0
+tox>=4.30.3
 black>=22.0.0
 isort>=5.0.0
