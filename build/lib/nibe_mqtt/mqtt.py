@@ -1,0 +1,166 @@
+from __future__ import annotations
+
+import asyncio
+import json
+import logging
+import os
+from abc import ABC, abstractmethod
+
+from nibe.coil import Coil, CoilData
+from paho.mqtt.client import CallbackAPIVersion, Client, MQTTMessage
+
+logger = logging.getLogger("nibe").getChild(__name__)
+
+
+class MqttHandler(ABC):
+    @abstractmethod
+    def handle_coil_set(self, name, value):
+        pass
+
+    @abstractmethod
+    def on_mqtt_connected(self):
+        pass
+
+
+class MqttConnection:
+    def __init__(self, handler: MqttHandler, conf: dict):
+        self._conf = conf
+        self._handler = handler
+        self._loop = None
+
+        self._availability_topic = f"{conf['prefix']}/availability"
+
+        self._client = Client(
+            CallbackAPIVersion.VERSION1,
+            "nibe-" + os.urandom(8).hex(),
+            protocol=conf["protocol"],
+            transport="tcp",
+        )
+
+        if conf.get("username"):
+            self._client.username_pw_set(username=conf["username"], password=conf["password"])
+
+        self._client.on_connect = self._on_connect_cb
+        self._client.on_disconnect = self._on_disconnect_cb
+        self._client.on_message = self._on_message_cb
+
+    def _on_connect_cb(self, client, userdata, flags, reason_code, properties=None):
+        logger.warning("MQTT connected")
+
+        self._client.will_set(
+            self._availability_topic,
+            "offline",
+            retain=self._conf["retain_availability"],
+        )
+        self._client.publish(self._availability_topic, "online", retain=self._conf["retain_availability"])
+        self._client.subscribe(f"{self._conf['prefix']}/coils/+/set")
+
+        self._handler.on_mqtt_connected()
+
+    def _on_disconnect_cb(self, client, userdata, flags, reason_code, properties=None):
+        logger.warning("MQTT disconnected")
+
+    def _on_message_cb(self, client, userdata, msg: MQTTMessage):
+        coil_name = msg.topic.removeprefix(self._conf["prefix"]).split("/")[2]
+        value = msg.payload.decode("utf-8")
+
+        logger.info(f"Received MQTT command set {coil_name} to {value}")
+
+        if self._loop is not None:
+            self._loop.call_soon_threadsafe(self._handler.handle_coil_set, coil_name, value)
+        else:
+            logger.error("Event loop not set, cannot handle MQTT message")
+
+    def start(self):
+        # Store the event loop reference while we're in an async context
+        # This is needed because MQTT callbacks run in a separate thread
+        self._loop = asyncio.get_running_loop()
+
+        self._client.connect_async(host=self._conf["host"], port=self._conf["port"])
+
+        self._client.loop_start()
+
+    def stop(self):
+        self._client.loop_stop()
+
+    def _get_coil_state_topic(self, coil: Coil):
+        return f"{self._conf['prefix']}/coils/{coil.name}"
+
+    def publish_coil_state(self, coil_data: CoilData):
+        self._client.publish(
+            self._get_coil_state_topic(coil_data.coil),
+            coil_data.value,
+            retain=self._conf["retain_state"],
+        )
+
+    def publish_discovery(self, coil_data: CoilData, device_info: dict):
+        coil = coil_data.coil
+        component = "sensor"
+
+        device_id = device_info.get("id")
+        device = {
+            "manufacturer": "Nibe",
+            "name": device_info.get("name"),
+            "model": device_info.get("model"),
+            "identifiers": [device_id],
+            # "sw_version": ""
+        }
+
+        unique_id = f"{device_id}_{coil.name}"
+        config = {
+            "name": coil.title,
+            "unique_id": unique_id,
+            "state_topic": self._get_coil_state_topic(coil),
+            "availability_topic": self._availability_topic,
+            "device": device,
+        }
+        uom = coil.unit
+        if uom is not None:
+            config["unit_of_measurement"] = uom
+            if uom == "°C":
+                config["device_class"] = "temperature"
+                config["state_class"] = "measurement"
+            elif uom in ["h", "min"]:
+                config["device_class"] = "duration"
+            elif uom in ["kW", "W"]:
+                config["device_class"] = "power"
+            elif uom == "kWh":
+                config["device_class"] = "energy"
+            elif uom == "Hz":
+                config["device_class"] = "frequency"
+        if coil.is_boolean:
+            # Boolean coils always have mappings (either default OFF/ON or custom)
+            # Get the actual mapped values for 0 and 1
+            off_value = coil.mappings.get("0", "OFF")
+            on_value = coil.mappings.get("1", "ON")
+
+            if coil.is_writable:  # switch
+                component = "switch"
+                config["command_topic"] = f"{config['state_topic']}/set"
+                config["payload_on"] = on_value
+                config["payload_off"] = off_value
+                config["state_on"] = on_value
+                config["state_off"] = off_value
+            else:  # binary_sensor
+                component = "binary_sensor"
+                config["payload_on"] = on_value
+                config["payload_off"] = off_value
+        elif coil.is_writable:  # switch
+            if coil.has_mappings:
+                component = "select"
+                config["command_topic"] = f"{config['state_topic']}/set"
+                config["options"] = list(coil.reverse_mappings.keys())
+            else:
+                component = "number"
+                config["command_topic"] = f"{config['state_topic']}/set"
+                config["min"] = coil.min
+                config["max"] = coil.max
+                config["step"] = 1 / coil.factor
+
+        config["default_entity_id"] = f"{component}.{unique_id}"
+
+        self._client.publish(
+            f"{self._conf['discovery_prefix']}/{component}/{device_id}/{coil.name}/config",
+            json.dumps(config),
+            retain=self._conf["retain_state"],
+        )
