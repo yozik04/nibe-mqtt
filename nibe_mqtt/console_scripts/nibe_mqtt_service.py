@@ -3,16 +3,11 @@ from __future__ import annotations
 
 import argparse
 import asyncio
-import sys
 
 from nibe import __version__ as nibe_lib_version
 
 from nibe_mqtt import __version__ as nibe_mqtt_version
 from nibe_mqtt.service import run_service
-
-if sys.version_info < (3, 9):
-    print(f"You are using Python {sys.version_info[0]}.{sys.version_info[1]}, but Nibe daemon requires at least Python 3.9")
-    sys.exit(-1)
 
 
 def main():
