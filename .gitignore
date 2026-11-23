@@ -11,3 +11,4 @@ coverage.xml
 /.tox
 config.yaml
 .pytest_cache
+/build

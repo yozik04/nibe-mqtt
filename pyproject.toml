@@ -55,6 +55,9 @@ Homepage = "https://github.com/yozik04/nibe-mqtt"
 [project.scripts]
 nibe-mqtt = "nibe_mqtt.console_scripts.nibe_mqtt_service:main"
 
+[tool.setuptools]
+zip-safe = true
+
 [tool.setuptools.packages.find]
 include = ["nibe_mqtt*"]
 
