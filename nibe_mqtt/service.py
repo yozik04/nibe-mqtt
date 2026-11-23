@@ -209,7 +209,7 @@ class PollService:
         setattr(coil, self.LAST_UPDATE_ATTR, datetime.now())
 
 
-async def run_service(config_path: Path | str, log_version: str = None):
+async def run_service(config_path: Path | str, log_version: str | None = None):
     """Run the Nibe MQTT service with the given configuration file."""
     conf = cfg.load(Path(config_path))
 

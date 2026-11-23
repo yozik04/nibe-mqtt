@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=46.4.0"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -17,22 +17,33 @@ classifiers = [
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
-    "nibe >=2.7.0,<3.0.0",
+    "nibe>=2.26.0,<3.0.0",
     "paho_mqtt>=2.1.0",
     "voluptuous>=0.13.0",
     "pyyaml>=6.0",
     "python-slugify>=6.0.0",
 ]
 dynamic = ["version"]
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-asyncio",
+]
+dev = [
+    {include-group = "test"},
+    "tox>=4.22",
+    "black>=22.0.0",
+    "isort>=5.0.0",
+]
 
 [tool.setuptools.dynamic]
 version = {attr = "nibe_mqtt.__version__"}
@@ -55,6 +66,21 @@ asyncio_mode = "auto"
 
 [tool.black]
 line-length = 160
+target-version = ["py311", "py312", "py313", "py314", "py315"]
+
+[tool.isort]
+profile = "black"
+src_paths = ["nibe_mqtt", "tests"]
+multi_line_output = 0
+
+[tool.tox]
+env_list = ["py311", "py312", "py313", "py314", "py315"]
+skip_missing_interpreters = true
+
+[tool.tox.env_run_base]
+change_dir = "tests"
+dependency_groups = ["test"]
+commands = [["pytest", "--basetemp={env_tmp_dir}", {replace = "posargs", extend = true}]]
 
 [tool.coverage.report]
 show_missing = true
